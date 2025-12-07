@@ -1,6 +1,5 @@
 package com.example.modid;
 
-import com.example.modid.Tags;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.LogManager;
