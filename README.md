@@ -1,3 +1,8 @@
+# ForgeDevEnv
+A modified version of [TemplateDevEnv](https://github.com/CleanroomMC/TemplateDevEnv), containing spotless, lombok, ConfigAnyTime and some extra things.
+
+If you hate spotless, refer to [this commit](https://github.com/RuiXuqi/ForgeDevEnv/commit/d48bd8777297872b630b9480729d2a109b5b5d2d) to remove it.
+
 ## TemplateDevEnv
 _For Kotlin see [TemplateDevEnvKt](https://github.com/CleanroomMC/TemplateDevEnvKt)_
 
