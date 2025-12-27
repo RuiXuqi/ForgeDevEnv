@@ -24,7 +24,7 @@ jobs:
       - name: Add permission
         run: chmod +x ./gradlew
       - name: Execute Gradle build
-        run: ./gradlew build -x spotlessCheck
+        run: ./gradlew build
 
       - uses: ncipollo/release-action@v1.20.0
         with:

@@ -29,7 +29,7 @@ jobs:
         run: chmod +x ./gradlew
         
       - name: Execute Gradle build
-        run: ./gradlew build -x spotlessCheck
+        run: ./gradlew build
 
       - name: Get Changes between Tags
         id: changes
