@@ -147,7 +147,7 @@ dependencies {
         }
     }
     if (propertyBool('enable_junit_testing')) {
-        testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 }
