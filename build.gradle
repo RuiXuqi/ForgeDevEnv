@@ -23,7 +23,6 @@ assertProperty 'mod_id'
 assertProperty 'mod_name'
 
 assertSubProperties 'use_tags', 'tag_class_name'
-assertSubProperties 'use_lombok_ap', 'lombok_version'
 assertSubProperties 'use_access_transformer', 'access_transformer_locations'
 assertSubProperties 'use_mixins', 'mixin_booter_version', 'mixin_refmap'
 assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
@@ -62,6 +61,11 @@ java {
     if (propertyBool('generate_javadocs_jar')) {
         withJavadocJar()
     }
+}
+
+configurations {
+    shaded
+    implementation.extendsFrom shaded
 }
 
 minecraft {
@@ -123,13 +127,6 @@ dependencies {
         testCompileOnly('com.github.bsideup.jabel:jabel-javac-plugin:1.0.0') {
             transitive = false // We only care about the 1 annotation class
         }
-    }
-    if (propertyBool('use_lombok_ap')) {
-        compileOnly "org.projectlombok:lombok:${propertyString('lombok_version')}"
-        annotationProcessor "org.projectlombok:lombok:${propertyString('lombok_version')}"
-
-        testCompileOnly "org.projectlombok:lombok:${propertyString('lombok_version')}"
-        testAnnotationProcessor "org.projectlombok:lombok:${propertyString('lombok_version')}"
     }
     if (propertyBool('use_asset_mover')) {
         implementation "com.cleanroommc:assetmover:${propertyString('asset_mover_version')}"
@@ -237,6 +234,27 @@ jar {
             attribute_map['FMLAT'] = propertyString('access_transformer_locations')
         }
         attributes(attribute_map)
+    }
+}
+
+// Shade deps to the dev jar, so the normal dev jar will contain deps
+shadowJar {
+    archiveClassifier = 'dev'
+    configurations = [ project.configurations.shaded ]
+}
+
+if (propertyBool('enable_shadow')) {
+    // Unshaded dev jar get 'plain' as name
+    tasks.named("jar").configure {
+        archiveClassifier = "plain"
+    }
+    // Here we reobf the shaded dev jar, so the final obf jar will contain deps
+    tasks.named('reobfJar').configure {
+        inputJar.set(tasks.named('shadowJar').flatMap { it.archiveFile })
+    }
+} else {
+    tasks.named('shadowJar').configure {
+        enabled = false
     }
 }
 

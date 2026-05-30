@@ -22,11 +22,6 @@ repositories {
     mavenLocal() // Must be last for caching to work
 }
 
-configurations {
-    shade
-    implementation.extendsFrom shade
-}
-
 dependencies {
     // Include StripLatestForgeRequirements by default for the dev env, saves everyone a hassle
     runtimeOnly 'com.cleanroommc:strip-latest-forge-requirements:1.0'
@@ -43,8 +38,8 @@ dependencies {
     // When deobfuscating, RFG respects the mapping_channel + mapping_version stated in gradle.properties
 
     // Example - Shading dependencies:
-    // Using the shadow plugin, by using the "shade" configuration, the dependency will be shaded into your output jar
-    // shade 'mezz:jei:4.31.2' << will shade HadEnoughItems 4.31.2 directly into your jar
+    // Using the shadow plugin, by using the "shaded" configuration, the dependency will be shaded into your output jar
+    // shaded 'mezz:jei:4.31.2' << will shade HadEnoughItems 4.31.2 directly into your jar
     // For more configuration options: see the bottom of this file and: https://gradleup.com/shadow/configuration/
 
     // Example - CurseMaven dependencies:
@@ -63,7 +58,7 @@ dependencies {
     // runtimeOnly = runtime dependency
     // compileOnly = compile time dependency
     // annotationProcessor = annotation processing dependencies
-    // shade = includes dependency in output
+    // shaded = includes dependency in output
 
     // Transitive dependencies:
     // (Dependencies that your dependency depends on)
@@ -74,15 +69,15 @@ dependencies {
     // }
 }
 
-// Need reobfJar to use uber jars, so dependencies that are shaded in are present
-tasks.named('reobfJar').configure {
-    inputJar.set(tasks.named('shadowJar').flatMap({ it.archiveFile }))
-}
+tasks.named("shadowJar").configure {
+    // Exclude specific parts of deps to keep your jar clean
+    // dependencies {
+    //     exclude 'META-INF/maven/**'
+    // }
 
-// By default, it will use a "uberdev" suffix, and only pack shade configuration dependencies
-// Uberdev: dev jar w/ dependencies, NOT a reobfuscated artifact!
-// The end result (reobfJar) will have a non-suffixed name, as unlike normal shading envs, reobfJar is the end task
-tasks.shadowJar {
-    archiveClassifier = 'uberdev'
-    configurations = [ project.configurations.shade ]
+    // Relocate specific parts of deps, so multiple shaded classes in mods will not conflict
+    // relocate "mezz.jei", "shaded.mezz.jei"
+
+    // Remove unused classes automatically. May cause issues if they are accessed by reflection
+    // minimize()
 }
