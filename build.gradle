@@ -10,7 +10,8 @@ plugins {
     id 'maven-publish'
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.4.1'
     id 'com.gtnewhorizons.retrofuturagradle' version '2.0.2'
-    id 'com.diffplug.spotless' version '8.5.1'
+    id 'com.gradleup.shadow' version '9.4.2'
+    id 'com.diffplug.spotless' version '8.6.0'
 }
 
 apply from: 'gradle/scripts/helpers.gradle'
@@ -22,7 +23,6 @@ assertProperty 'mod_id'
 assertProperty 'mod_name'
 
 assertSubProperties 'use_tags', 'tag_class_name'
-assertSubProperties 'use_lombok_ap', 'lombok_version'
 assertSubProperties 'use_access_transformer', 'access_transformer_locations'
 assertSubProperties 'use_mixins', 'mixin_booter_version', 'mixin_refmap'
 assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
@@ -47,7 +47,7 @@ base {
     archivesName = propertyString('mod_id')
 }
 
-tasks.decompressDecompiledSources.enabled !propertyBool('change_minecraft_sources')
+tasks.decompressDecompiledSources.enabled !propertyBool('change_minecraft_sources') || !layout.buildDirectory.dir('rfg/minecraft-src').get().asFile.exists()
 
 java {
     toolchain {
@@ -64,8 +64,8 @@ java {
 }
 
 configurations {
-    embed
-    implementation.extendsFrom(embed)
+    shaded
+    implementation.extendsFrom shaded
 }
 
 minecraft {
@@ -93,9 +93,13 @@ minecraft {
 
     if (propertyBool('use_tags')) {
         if (file('tags.properties').exists()) {
-            Properties props = new Properties().tap {  it.load(file('tags.properties').newInputStream()); it }
+            Properties props = new Properties().tap { it.load(file('tags.properties').newInputStream()); it }
             if (!props.isEmpty()) {
-                injectedTags.set(props.collectEntries { k, v -> [(k): interpolate(v)] })
+                injectedTags.set(props.collectEntries { k, v ->
+                        def interpolated = interpolate(v)
+                        if (interpolated == null || interpolated.isEmpty()) throw new GradleException("Empty tag value found for key: $k")
+                        [(k): interpolated]
+                    })
             }
         }
     }
@@ -123,13 +127,6 @@ dependencies {
         testCompileOnly('com.github.bsideup.jabel:jabel-javac-plugin:1.0.0') {
             transitive = false // We only care about the 1 annotation class
         }
-    }
-    if (propertyBool('use_lombok_ap')) {
-        compileOnly "org.projectlombok:lombok:${propertyString('lombok_version')}"
-        annotationProcessor "org.projectlombok:lombok:${propertyString('lombok_version')}"
-
-        testCompileOnly "org.projectlombok:lombok:${propertyString('lombok_version')}"
-        testAnnotationProcessor "org.projectlombok:lombok:${propertyString('lombok_version')}"
     }
     if (propertyBool('use_asset_mover')) {
         implementation "com.cleanroommc:assetmover:${propertyString('asset_mover_version')}"
@@ -238,8 +235,27 @@ jar {
         }
         attributes(attribute_map)
     }
-    // Add all embedded dependencies into the jar
-    from(provider{ configurations.embed.collect {it.isDirectory() ? it : zipTree(it)} })
+}
+
+// Shade deps to the dev jar, so the normal dev jar will contain deps
+shadowJar {
+    archiveClassifier = 'dev'
+    configurations = [ project.configurations.shaded ]
+}
+
+if (propertyBool('enable_shadow')) {
+    // Unshaded dev jar get 'plain' as name
+    tasks.named("jar").configure {
+        archiveClassifier = "plain"
+    }
+    // Here we reobf the shaded dev jar, so the final obf jar will contain deps
+    tasks.named('reobfJar').configure {
+        inputJar.set(tasks.named('shadowJar').flatMap { it.archiveFile })
+    }
+} else {
+    tasks.named('shadowJar').configure {
+        enabled = false
+    }
 }
 
 idea {
