@@ -10,7 +10,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           
@@ -29,7 +29,7 @@ jobs:
         run: chmod +x ./gradlew
         
       - name: Execute Gradle build
-        run: ./gradlew build -x spotlessCheck
+        run: ./gradlew build
 
       - name: Get Changes between Tags
         id: changes
