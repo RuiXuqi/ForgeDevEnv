@@ -1,9 +1,24 @@
+# Modified version of ForgeDevEnv
+A modified version of [CleanroomMC/ForgeDevEnv](https://github.com/CleanroomMC/ForgeDevEnv) with some QoL improvements.
+
+Feature:
+- Instant Gradle update
+- Improved shadow configuration to make you work less
+- Spotless plugin, whose check is disabled by default
+
+Stability not guaranteed.
+
+## Tips
+- [RuiXuqi/CleanroomModTemplate](https://github.com/RuiXuqi/CleanroomModTemplate) provides Cleanroom support. Configuration highly aligned with this this.
+
 ## TemplateDevEnv
 _For Kotlin see [TemplateDevEnvKt](https://github.com/CleanroomMC/TemplateDevEnvKt)_
 
+_For Cleanroom modding see [CleanroomModTemplate](https://github.com/RuiXuqi/CleanroomModTemplate)_
+
 Template workspace for modding Minecraft 1.12.2. Licensed under MIT, it is made for public use.
 
-This template runs on **Java 25**, **Gradle 9.6.1** + **[RetroFuturaGradle](https://github.com/GTNewHorizons/RetroFuturaGradle) 2.0.2** + **Forge 14.23.5.2847**.
+This template runs on **Java 25**, **Gradle 9** + **[RetroFuturaGradle](https://github.com/GTNewHorizons/RetroFuturaGradle) 2.0.2** + **Forge 14.23.5.2847**.
 
 With **coremod and mixin support** that is easy to configure.
 

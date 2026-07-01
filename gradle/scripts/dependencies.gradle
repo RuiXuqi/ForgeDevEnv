@@ -1,36 +1,25 @@
 apply from: 'gradle/scripts/helpers.gradle'
 
 repositories {
+    flatDir {
+        dirs('libs') // /libs
+    }
     // Other repositories described by default:
     // CleanroomMC: https://maven.cleanroommc.com
-    exclusiveContent {
-        forRepository {
-            maven {
-                name 'CleanroomMC CurseMaven'
-                url 'https://curse.cleanroommc.com'
-            }
-        }
-        filter {
-            includeGroup 'curse.maven'
-        }
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
     }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name 'Modrinth'
-                url 'https://api.modrinth.com/maven'
-            }
-        }
-        filter {
-            includeGroup 'maven.modrinth'
-        }
+    maven {
+        name = 'CleanroomCurseMaven'
+        url = 'https://curse.cleanroommc.com'
     }
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
+    mavenCentral()
     mavenLocal() // Must be last for caching to work
-}
-
-configurations {
-    shade
-    implementation.extendsFrom shade
 }
 
 dependencies {
@@ -49,8 +38,8 @@ dependencies {
     // When deobfuscating, RFG respects the mapping_channel + mapping_version stated in gradle.properties
 
     // Example - Shading dependencies:
-    // Using the shadow plugin, by using the "shade" configuration, the dependency will be shaded into your output jar
-    // shade 'mezz:jei:4.31.2' << will shade HadEnoughItems 4.31.2 directly into your jar
+    // Using the shadow plugin, by using the "shaded" configuration, the dependency will be shaded into your output jar
+    // shaded 'mezz:jei:4.31.2' << will shade HadEnoughItems 4.31.2 directly into your jar
     // For more configuration options: see the bottom of this file and: https://gradleup.com/shadow/configuration/
 
     // Example - CurseMaven dependencies:
@@ -61,12 +50,15 @@ dependencies {
     // 'maven.modrinth:jei:4.16.1.1000' << jei = project name, 4.16.1.1000 = file version
     // Full documentation: https://docs.modrinth.com/docs/tutorials/maven/
 
+    // Example - Local dependencies:
+    // 'libs:ctm-1.2.1; << libs = folder name (/libs) in flatDir, ctm-1.2.1 = file name (ctm-1.2.1.jar)
+
     // Common dependency types (configuration):
     // implementation = dependency available at both compile time and runtime
     // runtimeOnly = runtime dependency
     // compileOnly = compile time dependency
     // annotationProcessor = annotation processing dependencies
-    // shade = includes dependency in output
+    // shaded = includes dependency in output
 
     // Transitive dependencies:
     // (Dependencies that your dependency depends on)
@@ -77,20 +69,17 @@ dependencies {
     // }
 }
 
-// Need reobfJar to use uber jars, so dependencies that are shaded in are present
-// Only redirect reobfJar through shadowJar when there's actually something to shade
-if (!configurations.shade.dependencies.empty) {
-    tasks.named('reobfJar').configure {
-        inputJar.set(tasks.named('shadowJar').flatMap({ it.archiveFile }))
-    }
-}
+if (propertyBool('enable_shadow')) {
+    tasks.named("shadowJar").configure {
+        // Exclude specific parts of deps to keep your jar clean
+        // dependencies {
+        //     exclude 'META-INF/maven/**'
+        // }
 
-// By default, it will use a "uberdev" suffix, and only pack shade configuration dependencies
-// Uberdev: dev jar w/ dependencies, NOT a reobfuscated artifact!
-// The end result (reobfJar) will have a non-suffixed name, as unlike normal shading envs, reobfJar is the end task
-tasks.shadowJar {
-    // Shadow wires shadowJar into the assemble task, so it runs even when nothing is shaded
-    enabled = !project.configurations.shade.dependencies.empty
-    archiveClassifier = 'uberdev'
-    configurations = [ project.configurations.shade ]
+        // Relocate specific parts of deps, so multiple shaded classes in mods will not conflict
+        // relocate "mezz.jei", "shaded.mezz.jei"
+
+        // Remove unused classes automatically. May cause issues if they are accessed by reflection
+        // minimize()
+    }
 }
