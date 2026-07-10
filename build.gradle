@@ -29,7 +29,6 @@ assertProperty 'mod_name'
 assertSubProperties 'use_access_transformer', 'access_transformer_locations'
 assertSubProperties 'use_mixins', 'mixin_booter_version', 'mixin_refmap'
 assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
-assertSubProperties 'use_config_any_time', 'config_any_time_version'
 
 setDefaultProperty 'use_modern_java_syntax', false, false
 setDefaultProperty 'use_jetbrains_annotations', false, false
