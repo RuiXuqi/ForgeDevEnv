@@ -110,7 +110,7 @@ dependencies {
     if (propertyBool('use_modern_java_syntax')) {
         annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:1.0.0'
         // Workaround for https://github.com/bsideup/jabel/issues/174
-        annotationProcessor 'net.java.dev.jna:jna-platform:5.13.0'
+        annotationProcessor 'net.java.dev.jna:jna-platform:5.19.1'
         compileOnly ('com.github.bsideup.jabel:jabel-javac-plugin:1.0.0') {
             transitive = false
         }
