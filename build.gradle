@@ -24,11 +24,10 @@ if (propertyBool('enable_shadow')) {
 assertProperty 'mod_version'
 assertProperty 'root_package'
 assertProperty 'mod_id'
-assertProperty 'mod_package'
 assertProperty 'mod_name'
 
 assertSubProperties 'use_access_transformer', 'access_transformer_locations'
-assertSubProperties 'use_mixins', 'mixin_booter_version', 'mixin_refmap', 'mixin_configs'
+assertSubProperties 'use_mixins', 'mixin_booter_version', 'mixin_refmap'
 assertSubProperties 'is_coremod', 'coremod_includes_mod', 'coremod_plugin_class_name'
 
 setDefaultProperty 'use_modern_java_syntax', false, false
@@ -43,7 +42,6 @@ setDefaultProperty 'minecraft_username', true, 'Dev'
 setDefaultProperty 'extra_jvm_args', false, ''
 setDefaultProperty 'extra_tweak_classes', false, ''
 setDefaultProperty 'change_minecraft_sources', false, false
-setDefaultProperty 'publish_to_curseforge', true, false
 setDefaultProperty 'mixin_connector_class', false, ''
 
 version = propertyString('mod_version')
@@ -71,10 +69,6 @@ java {
 
 boolean useMixins = propertyBool('use_mixins')
 def mixinConfigs = propertyStringList('mixin_configs', ',')
-if (useMixins && mixinConfigs.isEmpty()) {
-    throw new GradleException('Property mixin_configs must contain at least one configuration filename!')
-}
-String mixinConfigValue = mixinConfigs.join(',')
 
 configurations {
     if (propertyBool('enable_shadow')) {
@@ -211,7 +205,6 @@ sourceSets {
                 property('mod_id', propertyString('mod_id'))
                 property('mod_name', propertyString('mod_name'))
                 property('mod_version', propertyString('mod_version'))
-                property('package', propertyString('mod_package'))
             }
             resources {
                 property('mod_id', propertyString('mod_id'))
@@ -237,7 +230,9 @@ jar {
     manifest {
         def attribute_map = [:]
         if (useMixins) {
-            attribute_map['MixinConfigs'] = mixinConfigValue
+            if (!mixinConfigs.isEmpty()) {
+                attribute_map['MixinConfigs'] = mixinConfigs.join(',')
+            }
             def mixinConnectorClass = propertyString('mixin_connector_class')
             if (!mixinConnectorClass.isEmpty()) {
                 attribute_map['MixinConnector'] = mixinConnectorClass
@@ -353,8 +348,8 @@ tasks.register('generateMixinJson') {
             configFile.parentFile.mkdirs()
             def config = [
                     'package': '',
+                    'refmap': propertyString('mixin_refmap'),
                     'required': true,
-                    'refmap': "${propertyString('mixin_refmap')}",
                     'target': '@env(DEFAULT)',
                     'minVersion': '0.8.7',
                     'compatibilityLevel': 'JAVA_8',
@@ -402,12 +397,6 @@ tasks.register('prioritizeCoremods') {
                 it.renameTo(new File(it.parentFile, "!${it.name}"))
             }
         }
-    }
-}
-
-idea.project.settings {
-    taskTriggers {
-        afterSync 'generateMixinJson'
     }
 }
 
