@@ -125,13 +125,10 @@ mcpForge {
     }
 }
 
-if (propertyBool('use_mixins')) {
+if (useMixins) {
     mixin {
         mixinConfigs.each { config(it) }
-        String refmap = propertyString('mixin_refmap')
-        if (!refmap.isBlank()) {
-            add refmap
-        }
+        add propertyString('mixin_refmap')
     }
 }
 
