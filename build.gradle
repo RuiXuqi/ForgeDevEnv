@@ -10,7 +10,7 @@ plugins {
     id 'org.jetbrains.gradle.plugin.idea-ext' version '1.4.1'
     id 'com.gtnewhorizons.retrofuturagradle' version '2.0.6'
     id 'net.kyori.blossom' version '2.2.0'
-    id 'com.diffplug.spotless' version '8.10.3'
+    id 'com.diffplug.spotless' version '8.10.3' apply false
     id 'com.gradleup.shadow' version '9.6.1' apply false
 }
 
@@ -68,6 +68,14 @@ java {
 }
 
 boolean useMixins = propertyBool('use_mixins')
+boolean legacyMixinBooter = false
+if (useMixins) {
+    String mixinBooterMajor = propertyString('mixin_booter_version').tokenize('.')[0]
+    if (!mixinBooterMajor.isInteger()) {
+        throw new GradleException("mixin_booter_version must be a concrete version (e.g. 10.7 / 11.13), dynamic versions are unsupported: ${mixinBooterMajor}")
+    }
+    legacyMixinBooter = mixinBooterMajor.toInteger() < 11
+}
 def mixinConfigs = propertyStringList('mixin_configs', ',')
 
 configurations {
@@ -105,19 +113,6 @@ minecraft {
     }
     extraRunJvmArguments.addAll(args)
     extraRunJvmArguments.addAll(propertyStringList('extra_jvm_args'))
-
-    if (propertyBool('use_tags')) {
-        if (file('tags.properties').exists()) {
-            Properties props = new Properties().tap { it.load(file('tags.properties').newInputStream()); it }
-            if (!props.isEmpty()) {
-                injectedTags.set(props.collectEntries { k, v ->
-                        def interpolated = interpolate(v)
-                        if (interpolated == null || interpolated.isEmpty()) throw new GradleException("Empty tag value found for key: $k")
-                        [(k): interpolated]
-                })
-            }
-        }
-    }
 }
 
 repositories {
@@ -150,10 +145,22 @@ dependencies {
     }
     if (useMixins) {
         String mixin = modUtils.enableMixins("zone.rong:mixinbooter:${propertyString('mixin_booter_version')}", propertyString('mixin_refmap'))
-        implementation (mixin) {
-            transitive = false
+        if (legacyMixinBooter) {
+            api (mixin) {
+                transitive = false
+            }
+            annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
+            annotationProcessor 'com.google.guava:guava:32.1.2-jre'
+            annotationProcessor 'com.google.code.gson:gson:2.8.9'
+            annotationProcessor (mixin) {
+                transitive = false
+            }
+        } else {
+            implementation (mixin) {
+                transitive = false
+            }
+            annotationProcessor mixin
         }
-        annotationProcessor mixin
         add ('mixinAgent', mixin) {
             transitive = false
         }
@@ -180,7 +187,7 @@ if (useMixins) {
 
 // Adds Access Transformer files to tasks
 if (propertyBool('use_access_transformer')) {
-    def atFiles = propertyStringList('access_transformer_locations').collect { location ->
+    def atFiles = propertyStringList('access_transformer_locations', ',').collect { location ->
         def fileLocation = file("src/main/resources/${location}")
         if (!fileLocation.exists()) {
             throw new GradleException("Access Transformer file [$fileLocation] does not exist!")
@@ -229,7 +236,7 @@ sourceSets {
 jar {
     manifest {
         def attribute_map = [:]
-        if (useMixins) {
+        if (useMixins && !legacyMixinBooter) {
             if (!mixinConfigs.isEmpty()) {
                 attribute_map['MixinConfigs'] = mixinConfigs.join(',')
             }
@@ -249,7 +256,7 @@ jar {
             }
         }
         if (propertyBool('use_access_transformer')) {
-            attribute_map['FMLAT'] = propertyString('access_transformer_locations')
+            attribute_map['FMLAT'] = propertyStringList('access_transformer_locations', ',').join(' ')
         }
 
         attributes(attribute_map)
@@ -292,13 +299,10 @@ idea {
                 "3. Build Mod"(Gradle) {
                     taskNames = ["build"]
                 }
-                "4. Apply Spotless"(Gradle) {
-                    taskNames = ["spotlessApply"]
-                }
-                "5. Run Obfuscated Client"(Gradle) {
+                "4. Run Obfuscated Client"(Gradle) {
                     taskNames = ["runObfClient"]
                 }
-                "6. Run Obfuscated Server"(Gradle) {
+                "5. Run Obfuscated Server"(Gradle) {
                     taskNames = ["runObfServer"]
                 }
             }
@@ -311,6 +315,12 @@ idea {
                 }
             }
         }
+    }
+}
+
+plugins.withId('com.diffplug.spotless') {
+    project.idea.project.settings.runConfigurations.create('6. Apply Spotless', Gradle) {
+        taskNames = ['spotlessApply']
     }
 }
 
