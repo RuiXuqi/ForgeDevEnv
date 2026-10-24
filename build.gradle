@@ -117,8 +117,11 @@ minecraft {
 
 repositories {
     maven {
-        name 'CleanroomMC Maven'
-        url 'https://maven.cleanroommc.com'
+        name = 'CleanroomMC'
+        url = 'https://maven.cleanroommc.com'
+        content {
+            includeGroup 'zone.rong'
+        }
     }
 }
 
@@ -126,17 +129,16 @@ repositories {
 // Check gradle/scripts/dependencies.gradle for that.
 dependencies {
     if (propertyBool('use_modern_java_syntax')) {
-        annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:1.0.0'
         // Workaround for https://github.com/bsideup/jabel/issues/174
         annotationProcessor 'net.java.dev.jna:jna-platform:5.19.1'
-        compileOnly ('com.github.bsideup.jabel:jabel-javac-plugin:1.0.0') {
+        def jabel = 'com.github.bsideup.jabel:jabel-javac-plugin:1.0.0'
+        annotationProcessor jabel
+        compileOnly (jabel) {
             transitive = false
         }
-        // Allow jdk.unsupported classes like sun.misc.Unsafe, workaround for JDK-8206937 and fixes crashes in tests
-        patchedMinecraft 'me.eigenraven.java8unsupported:java-8-unsupported-shim:1.0.0'
         // Include for tests
-        testAnnotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:1.0.0'
-        testCompileOnly('com.github.bsideup.jabel:jabel-javac-plugin:1.0.0') {
+        testAnnotationProcessor jabel
+        testCompileOnly(jabel) {
             transitive = false // We only care about the 1 annotation class
         }
     }
@@ -149,12 +151,12 @@ dependencies {
             api (mixin) {
                 transitive = false
             }
-            annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
-            annotationProcessor 'com.google.guava:guava:32.1.2-jre'
-            annotationProcessor 'com.google.code.gson:gson:2.8.9'
             annotationProcessor (mixin) {
                 transitive = false
             }
+            annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
+            annotationProcessor 'com.google.guava:guava:32.1.2-jre'
+            annotationProcessor 'com.google.code.gson:gson:2.8.9'
         } else {
             implementation (mixin) {
                 transitive = false
