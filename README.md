@@ -9,7 +9,9 @@ Feature:
 Stability not guaranteed.
 
 ## Tips
+- Mixin support is included via [MixinBooter](https://github.com/CleanroomMC/MixinBooter) 10 or 11 and controlled by `use_mixins` in `gradle.properties`.
 - [RuiXuqi/CleanroomModTemplate](https://github.com/RuiXuqi/CleanroomModTemplate) provides Cleanroom support. Configuration highly aligned with this one.
+- Clear lines in `gradle/scripts/extra.gradle` to disable spotless if unnecessary.
 
 ## TemplateDevEnv
 _For Kotlin see [TemplateDevEnvKt](https://github.com/CleanroomMC/TemplateDevEnvKt)_
