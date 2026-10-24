@@ -72,7 +72,7 @@ boolean legacyMixinBooter = false
 if (useMixins) {
     String mixinBooterMajor = propertyString('mixin_booter_version').tokenize('.')[0]
     if (!mixinBooterMajor.isInteger()) {
-        throw new GradleException("mixin_booter_version must be a concrete version (e.g. 10.7 / 11.13), dynamic versions are unsupported: ${mixinBooterMajor}")
+        throw new GradleException("mixin_booter_version must be a concrete version (e.g. 10.7 / 11.18), dynamic versions are unsupported: ${mixinBooterMajor}")
     }
     legacyMixinBooter = mixinBooterMajor.toInteger() < 11
 }
