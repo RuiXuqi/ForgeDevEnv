@@ -121,6 +121,7 @@ repositories {
         url = 'https://maven.cleanroommc.com'
         content {
             includeGroup 'zone.rong'
+            includeGroup 'com.cleanroommc'
         }
     }
 }
