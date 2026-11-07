@@ -265,6 +265,8 @@ def modManifestAttributes = {
     return attribute_map
 }
 
+def manifestAttributes = modManifestAttributes()
+
 jar {
     if (propertyBool('enable_shadow')) {
         archiveClassifier = 'plain'
@@ -273,10 +275,8 @@ jar {
         destinationDirectory = layout.buildDirectory.dir('libs')
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    doFirst {
-        manifest {
-            attributes(modManifestAttributes())
-        }
+    manifest {
+        attributes(manifestAttributes)
     }
 }
 
@@ -292,10 +292,8 @@ if (propertyBool('enable_shadow')) {
             // The shaded jar replaces `jar`, and reobfuscation remaps this jar, so the refmap has to be here
             from(mixinRefmap)
         }
-        doFirst {
-            manifest {
-                attributes(modManifestAttributes())
-            }
+        manifest {
+            attributes(manifestAttributes)
         }
     }
     // Unshaded dev jar get 'plain' as name
@@ -363,6 +361,9 @@ test {
     }
 }
 
+def mixinResourcesDir = file('src/main/resources')
+def mixinRefmapName = propertyString('mixin_refmap')
+
 tasks.register('generateMixinJson') {
     group = 'build setup'
     description = 'Generates missing Mixin configuration JSON files.'
@@ -371,18 +372,18 @@ tasks.register('generateMixinJson') {
     }
     doLast {
         def missingConfigs = mixinConfigs.findAll { configName ->
-            !file("src/main/resources/${configName}").exists()
+            !new File(mixinResourcesDir, configName).exists()
         }
         if (missingConfigs.isEmpty()) {
             logger.lifecycle('No missing Mixin JSON files.')
             return
         }
         missingConfigs.each { configName ->
-            def configFile = file("src/main/resources/${configName}")
+            def configFile = new File(mixinResourcesDir, configName)
             configFile.parentFile.mkdirs()
             def config = [
                     'package': '',
-                    'refmap': propertyString('mixin_refmap'),
+                    'refmap': mixinRefmapName,
                     'required': true,
                     'target': '@env(DEFAULT)',
                     'minVersion': '0.8.7',
