@@ -51,7 +51,7 @@ base {
     archivesName = propertyString('mod_id')
 }
 
-tasks.decompressDecompiledSources.enabled !propertyBool('change_minecraft_sources') || !layout.buildDirectory.dir('rfg/minecraft-src').get().asFile.exists()
+tasks.decompressDecompiledSources.enabled = !propertyBool('change_minecraft_sources') || !layout.buildDirectory.dir('rfg/minecraft-src').get().asFile.exists()
 
 java {
     toolchain {
@@ -87,7 +87,6 @@ configurations {
         mixinAgent {
             canBeConsumed = false
             canBeResolved = true
-            visible = false
         }
     }
 }

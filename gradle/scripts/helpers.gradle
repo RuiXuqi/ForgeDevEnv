@@ -42,7 +42,20 @@ String interpolate(String value) {
         return new GroovyShell(this.getClass().getClassLoader(), newBinding).evaluate(value)
     }
     if (value.contains('${')) {
-        return new SimpleTemplateEngine().createTemplate(value).make(project.properties).toString()
+        // Project.properties is deprecated for removal in Gradle 10, so resolve only the
+        // keys actually referenced by the template instead of passing the whole property set.
+        def variables = new LinkedHashMap<String, Object>()
+        def matcher = value =~ /\$\{([^}]+)\}/
+        matcher.each { full, expr ->
+            def key = expr.trim()
+            if (key ==~ /[A-Za-z_][A-Za-z0-9_]*/) {
+                def resolved = project.findProperty(key)
+                if (resolved != null) {
+                    variables[key] = resolved
+                }
+            }
+        }
+        return new SimpleTemplateEngine().createTemplate(value).make(variables).toString()
     }
     return value
 }
