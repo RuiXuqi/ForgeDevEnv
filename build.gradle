@@ -177,11 +177,12 @@ dependencies {
 apply from: 'gradle/scripts/dependencies.gradle'
 
 if (useMixins) {
+    def mixinAgentJar = configurations.mixinAgent.singleFile
     ['runClient', 'runServer', 'runObfClient', 'runObfServer'].each { taskName ->
         tasks.named(taskName, JavaExec).configure { JavaExec task ->
             task.doFirst {
                 if (task.debug) {
-                    task.jvmArgs("-javaagent:${configurations.mixinAgent.singleFile.absolutePath}")
+                    task.jvmArgs("-javaagent:${mixinAgentJar.absolutePath}")
                 }
             }
         }
@@ -343,6 +344,9 @@ test {
     }
 }
 
+def mixinResourcesDir = file('src/main/resources')
+def mixinRefmapName = propertyString('mixin_refmap')
+
 tasks.register('generateMixinJson') {
     group = 'build setup'
     description = 'Generates missing Mixin configuration JSON files.'
@@ -351,18 +355,18 @@ tasks.register('generateMixinJson') {
     }
     doLast {
         def missingConfigs = mixinConfigs.findAll { configName ->
-            !file("src/main/resources/${configName}").exists()
+            !new File(mixinResourcesDir, configName).exists()
         }
         if (missingConfigs.isEmpty()) {
             logger.lifecycle('No missing Mixin JSON files.')
             return
         }
         missingConfigs.each { configName ->
-            def configFile = file("src/main/resources/${configName}")
+            def configFile = new File(mixinResourcesDir, configName)
             configFile.parentFile.mkdirs()
             def config = [
                     'package': '',
-                    'refmap': propertyString('mixin_refmap'),
+                    'refmap': mixinRefmapName,
                     'required': true,
                     'target': '@env(DEFAULT)',
                     'minVersion': '0.8.7',
@@ -403,12 +407,19 @@ tasks.named('prepareObfModsFolder').configure {
     finalizedBy 'prioritizeCoremods'
 }
 
+def obfuscatedModsDir = file('run/obfuscated')
+def coremodJarPattern = '(mixinbooter|configanytime)(-)([0-9])+\\.+([0-9])+(.jar)'
+
 tasks.register('prioritizeCoremods') {
     dependsOn 'prepareObfModsFolder'
+    outputs.upToDateWhen { false }
     doLast {
-        fileTree('run/obfuscated').forEach {
-            if (it.isFile() && it.name =~ '(mixinbooter|configanytime)(-)([0-9])+\\.+([0-9])+(.jar)') {
-                it.renameTo(new File(it.parentFile, "!${it.name}"))
+        if (!obfuscatedModsDir.isDirectory()) {
+            return
+        }
+        obfuscatedModsDir.eachFileRecurse { jarFile ->
+            if (jarFile.isFile() && jarFile.name =~ coremodJarPattern) {
+                jarFile.renameTo(new File(jarFile.parentFile, "!${jarFile.name}"))
             }
         }
     }
